@@ -12,6 +12,7 @@
  *   CURSOR_FILE    – path to cursor file (default ./cursor.txt)
  */
 
+import 'dotenv/config';
 import dgram from 'node:dgram';
 import fs from 'node:fs';
 import path from 'node:path';

@@ -6,7 +6,11 @@
       "Bash(node --input-type=module --eval \"import { XMLParser } from 'fast-xml-parser';\")",
       "Bash(node *)",
       "WebSearch",
-      "WebFetch(domain:www.arrl.org)"
+      "WebFetch(domain:www.arrl.org)",
+      "Bash(git -C \"D:/Users/joshu/Documents/Code/contest.w4trc.org\" log --oneline)",
+      "Bash(git -C \"D:/Users/joshu/Documents/Code/contest.w4trc.org-1\" log --oneline)",
+      "Bash(git -C \"D:/Users/joshu/Documents/Code/contest.w4trc.org\" remote -v)",
+      "Read(//d/Users/joshu/Documents/Code/**)"
     ]
   }
 }

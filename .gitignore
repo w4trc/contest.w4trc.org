@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Wrangler local state
+.wrangler/
+
+# Agent runtime files
+agent/queue.jsonl
+agent/cursor.txt
+agent/.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

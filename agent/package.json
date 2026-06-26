@@ -11,6 +11,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "dotenv": "^16.0.0",
     "fast-xml-parser": "^4.4.1"
   }
 }
