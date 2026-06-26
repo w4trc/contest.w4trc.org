@@ -9,6 +9,6 @@ globs = ["**/*.html"]
 [[d1_databases]]
 binding = "DB"
 database_name = "fieldday"
-database_id = "REPLACE_WITH_ID_FROM_wrangler_d1_create"
+database_id = "cc5d37b8-f4ad-40f6-8954-485b0a3116c3"
 
 # Deploy: wrangler secret put INGEST_SECRET
