@@ -84,7 +84,7 @@ nav {
   line-height: 1;
   color: #fff;
 }
-.stat-card .val.green { color: var(--green); }
+.stat-card .val.green  { color: var(--green); }
 .stat-card .val.yellow { color: var(--yellow); }
 .stat-card .lbl {
   font-size: 0.72rem;
@@ -128,7 +128,7 @@ nav {
 /* ── Band bars ── */
 .band-list { display: flex; flex-direction: column; gap: 8px; }
 .band-row  { display: flex; align-items: center; gap: 8px; }
-.band-name { width: 48px; text-align: right; flex-shrink: 0; font-size: 0.82rem; font-weight: 600; }
+.band-name  { width: 48px; text-align: right; flex-shrink: 0; font-size: 0.82rem; font-weight: 600; }
 .band-track { flex: 1; height: 20px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
 .band-fill  {
   height: 100%; border-radius: 4px; min-width: 3px;
@@ -139,14 +139,42 @@ nav {
 /* ── Operator list ── */
 .op-list { display: flex; flex-direction: column; gap: 7px; }
 .op-row  { display: flex; align-items: center; gap: 8px; }
-.op-rank { width: 18px; text-align: right; font-size: 0.68rem; color: var(--muted); flex-shrink: 0; }
-.op-call { width: 72px; flex-shrink: 0; font-size: 0.82rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.op-rank  { width: 18px; text-align: right; font-size: 0.68rem; color: var(--muted); flex-shrink: 0; }
+.op-call  { width: 72px; flex-shrink: 0; font-size: 0.82rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
 .op-track { flex: 1; height: 18px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
 .op-fill  {
   height: 100%; background: var(--blue); border-radius: 3px; min-width: 3px;
   transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
 }
 .op-count { width: 32px; font-size: 0.82rem; font-weight: 700; }
+
+/* ── Recent QSOs ── */
+.qso-list { display: flex; flex-direction: column; gap: 2px; }
+.qso-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 52px 38px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  transition: background 0.3s;
+}
+.qso-row.new-section {
+  animation: flash-row 2s ease-out forwards;
+}
+@keyframes flash-row {
+  0%   { background: rgba(250,204,21,0.25); }
+  100% { background: transparent; }
+}
+.qso-time { font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.qso-call { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.03em; }
+.qso-band {
+  font-size: 0.68rem; font-weight: 700; padding: 2px 5px;
+  border-radius: 3px; text-align: center;
+}
+.qso-section { font-size: 0.78rem; font-weight: 600; color: var(--green); }
+.qso-section.dim { color: var(--muted); }
+.qso-op { font-size: 0.72rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ── Sections ── */
 .needed-btn {
@@ -155,7 +183,7 @@ nav {
   font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em;
   transition: border-color 0.2s, color 0.2s;
 }
-.needed-btn:hover { border-color: var(--blue); color: var(--blue); }
+.needed-btn:hover  { border-color: var(--blue); color: var(--blue); }
 .needed-btn.active { border-color: var(--yellow); color: var(--yellow); }
 .sec-groups { display: flex; flex-direction: column; gap: 14px; }
 .sec-group-label {
@@ -170,6 +198,14 @@ nav {
 }
 .sec.worked   { background: var(--green); color: #000; }
 .sec.unworked { background: var(--surface2); color: #444; }
+.sec.flash {
+  animation: flash-sec 2s ease-out forwards;
+}
+@keyframes flash-sec {
+  0%   { background: var(--yellow); color: #000; box-shadow: 0 0 10px var(--yellow); }
+  60%  { background: var(--yellow); color: #000; }
+  100% { background: var(--green);  color: #000; box-shadow: none; }
+}
 </style>
 </head>
 <body>
@@ -217,6 +253,12 @@ nav {
       <div class="op-list" id="op-list"></div>
     </div>
 
+    <!-- Recent QSOs -->
+    <div class="card">
+      <div class="card-title">Recent QSOs</div>
+      <div class="qso-list" id="qso-list"></div>
+    </div>
+
     <!-- Sections -->
     <div class="card full">
       <div class="card-title">
@@ -261,16 +303,42 @@ var BAND_COLORS = {
 
 var showNeeded = false;
 var lastWorked = new Set();
+var prevWorked = null; // null on first load so we don't flash everything
 
 function toggleNeeded() {
   showNeeded = !showNeeded;
   var btn = document.getElementById('needed-btn');
   btn.textContent = showNeeded ? 'Show All' : 'Show Needed';
   btn.className = showNeeded ? 'needed-btn active' : 'needed-btn';
-  renderSections(lastWorked);
+  renderSections(lastWorked, new Set());
 }
 
-function renderSections(worked) {
+function fmtTime(ts) {
+  if (!ts) return '';
+  var t = String(ts).split(' ')[1] || '';
+  return t.substring(0, 5);
+}
+
+function renderRecent(recent, newSections) {
+  var html = '';
+  for (var i = 0; i < recent.length; i++) {
+    var r = recent[i];
+    var isNew = r.section && newSections.has(r.section);
+    var color = BAND_COLORS[r.band] || '#555';
+    var rowCls = isNew ? 'qso-row new-section' : 'qso-row';
+    var secCls = r.section ? 'qso-section' : 'qso-section dim';
+    html += '<div class="' + rowCls + '">';
+    html += '<div class="qso-time">' + fmtTime(r.ts) + '</div>';
+    html += '<div class="qso-call">' + (r.call || '') + '</div>';
+    html += '<div class="qso-band" style="background:' + color + ';color:#000">' + (r.band || '') + '</div>';
+    html += '<div class="' + secCls + '">' + (r.section || '—') + '</div>';
+    html += '<div class="qso-op">' + (r.operator || '') + '</div>';
+    html += '</div>';
+  }
+  document.getElementById('qso-list').innerHTML = html;
+}
+
+function renderSections(worked, newSections) {
   lastWorked = worked;
   var container = document.getElementById('sec-groups');
   var html = '';
@@ -284,6 +352,7 @@ function renderSections(worked) {
     for (var i = 0; i < filtered.length; i++) {
       var s = filtered[i];
       var cls = worked.has(s) ? 'sec worked' : 'sec unworked';
+      if (newSections.has(s)) cls += ' flash';
       html += '<span class="' + cls + '">' + s + '</span>';
     }
     html += '</div></div>';
@@ -335,12 +404,23 @@ async function fetchStats() {
     document.getElementById('rate-hour').textContent = d.rateLastHour != null ? d.rateLastHour : '—';
 
     var worked = new Set(d.sectionsWorked || []);
+
+    // Detect newly worked sections (skip on first load)
+    var newSections = new Set();
+    if (prevWorked !== null) {
+      worked.forEach(function(s) {
+        if (!prevWorked.has(s)) newSections.add(s);
+      });
+    }
+    prevWorked = worked;
+
     document.getElementById('sec-count').textContent = worked.size;
     document.getElementById('sec-fraction').textContent = worked.size + ' / ' + TOTAL_SECTIONS;
 
     renderBands(d.byBand || []);
-    renderSections(worked);
     renderOperators(d.byOperator || []);
+    renderRecent(d.recent || [], newSections);
+    renderSections(worked, newSections);
 
     document.getElementById('dot').className = 'dot live';
     document.getElementById('updated-time').textContent =
