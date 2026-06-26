@@ -1,0 +1,23 @@
+{
+  "US": [
+    "CT","EMA","ME","NH","RI","VT","WMA",
+    "ENY","NLI","NNJ","NNY","SNJ","WNY",
+    "DE","EPA","MDC","WPA",
+    "IL","IN","WI",
+    "KY","MI","OH",
+    "MN","ND","SD",
+    "AR","LA","MS","TN",
+    "IA","KS","MO","NE",
+    "CO","NM","UT","WY",
+    "AK","EWA","ID","MT","OR","WWA",
+    "EB","NV","PAC","SCV","SF","SJV","SV",
+    "AL","GA","NFL","SFL","WCF","PR","VI",
+    "AZ","LAX","ORG","SB","SDG",
+    "NTX","OK","STX","WTX",
+    "NC","SC","VA","WV"
+  ],
+  "CANADA": [
+    "AB","BC","GH","MB","NB","NL","NS","ONE","ONN","ONS","PE","QC","SK","TER"
+  ],
+  "DX": ["DX"]
+}

@@ -1,0 +1,14 @@
+name = "w4trc-fieldday"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "fieldday"
+database_id = "REPLACE_WITH_ID_FROM_wrangler_d1_create"
+
+# Deploy: wrangler secret put INGEST_SECRET

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>W4TRC Field Day</title>
+<style>
+:root {
+  --bg:      #0f0f0f;
+  --surface: #1a1a1a;
+  --surface2: #222;
+  --border:  #2e2e2e;
+  --text:    #e8e8e8;
+  --muted:   #777;
+  --green:   #22c55e;
+  --blue:    #3b82f6;
+  --yellow:  #facc15;
+  --red:     #ef4444;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Nav ── */
+nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.callsign {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--yellow);
+}
+.nav-sep { color: var(--border); }
+.status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--muted); flex-shrink: 0;
+  transition: background 0.4s, box-shadow 0.4s;
+}
+.dot.live  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.dot.error { background: var(--red); }
+
+/* ── Page wrapper ── */
+.page { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+/* ── Stat cards ── */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+.stat-card .val {
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+}
+.stat-card .val.green { color: var(--green); }
+.stat-card .val.yellow { color: var(--yellow); }
+.stat-card .lbl {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 4px;
+}
+
+/* ── Main grid ── */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .grid { grid-template-columns: 1fr; }
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+.card.full { grid-column: 1 / -1; }
+.card-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── Band bars ── */
+.band-list { display: flex; flex-direction: column; gap: 8px; }
+.band-row  { display: flex; align-items: center; gap: 8px; }
+.band-name { width: 48px; text-align: right; flex-shrink: 0; font-size: 0.82rem; font-weight: 600; }
+.band-track { flex: 1; height: 20px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.band-fill  {
+  height: 100%; border-radius: 4px; min-width: 3px;
+  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+.band-count { width: 36px; font-size: 0.82rem; font-weight: 700; }
+
+/* ── Operator list ── */
+.op-list { display: flex; flex-direction: column; gap: 7px; }
+.op-row  { display: flex; align-items: center; gap: 8px; }
+.op-rank { width: 18px; text-align: right; font-size: 0.68rem; color: var(--muted); flex-shrink: 0; }
+.op-call { width: 72px; flex-shrink: 0; font-size: 0.82rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.op-track { flex: 1; height: 18px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.op-fill  {
+  height: 100%; background: var(--blue); border-radius: 3px; min-width: 3px;
+  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+.op-count { width: 32px; font-size: 0.82rem; font-weight: 700; }
+
+/* ── Sections ── */
+.needed-btn {
+  background: transparent; border: 1px solid var(--border); color: var(--muted);
+  padding: 2px 10px; border-radius: 4px; cursor: pointer;
+  font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em;
+  transition: border-color 0.2s, color 0.2s;
+}
+.needed-btn:hover { border-color: var(--blue); color: var(--blue); }
+.needed-btn.active { border-color: var(--yellow); color: var(--yellow); }
+.sec-groups { display: flex; flex-direction: column; gap: 14px; }
+.sec-group-label {
+  font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted); margin-bottom: 6px;
+}
+.sec-wrap { display: flex; flex-wrap: wrap; gap: 5px; }
+.sec {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em;
+  padding: 3px 7px; border-radius: 4px; min-width: 34px;
+  text-align: center; transition: background 0.3s, color 0.3s;
+}
+.sec.worked   { background: var(--green); color: #000; }
+.sec.unworked { background: var(--surface2); color: #444; }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="callsign">W4TRC</span>
+  <span class="nav-sep">|</span>
+  <span style="color:var(--muted);font-size:0.85rem">Field Day Dashboard</span>
+  <div class="status">
+    <div class="dot" id="dot"></div>
+    <span id="updated-time">Connecting…</span>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- Stat cards -->
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="val" id="total">—</div>
+      <div class="lbl">Total QSOs</div>
+    </div>
+    <div class="stat-card">
+      <div class="val green" id="rate-hour">—</div>
+      <div class="lbl">QSOs / last hour</div>
+    </div>
+    <div class="stat-card">
+      <div class="val yellow" id="sec-count">—</div>
+      <div class="lbl">Sections worked</div>
+    </div>
+  </div>
+
+  <!-- Main grid -->
+  <div class="grid">
+
+    <!-- Bands -->
+    <div class="card">
+      <div class="card-title">By Band</div>
+      <div class="band-list" id="band-list"></div>
+    </div>
+
+    <!-- Operators -->
+    <div class="card">
+      <div class="card-title">By Operator</div>
+      <div class="op-list" id="op-list"></div>
+    </div>
+
+    <!-- Sections -->
+    <div class="card full">
+      <div class="card-title">
+        <span>ARRL / RAC Sections — <span id="sec-fraction">0 / 86</span> worked</span>
+        <button class="needed-btn" id="needed-btn" onclick="toggleNeeded()">Show Needed</button>
+      </div>
+      <div class="sec-groups" id="sec-groups"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+var SECTIONS = {
+  US: ["CT","EMA","ME","NH","RI","VT","WMA",
+       "ENY","NLI","NNJ","NNY","SNJ","WNY",
+       "DE","EPA","MDC","WPA",
+       "IL","IN","WI",
+       "KY","MI","OH",
+       "MN","ND","SD",
+       "AR","LA","MS","TN",
+       "IA","KS","MO","NE",
+       "CO","NM","UT","WY",
+       "AK","EWA","ID","MT","OR","WWA",
+       "EB","NV","PAC","SCV","SF","SJV","SV",
+       "AL","GA","NFL","SFL","WCF","PR","VI",
+       "AZ","LAX","ORG","SB","SDG",
+       "NTX","OK","STX","WTX",
+       "NC","SC","VA","WV"],
+  CANADA: ["AB","BC","GH","MB","NB","NL","NS","ONE","ONN","ONS","PE","QC","SK","TER"],
+  DX: ["DX"]
+};
+
+var TOTAL_SECTIONS = Object.values(SECTIONS).reduce(function(a, b) { return a + b.length; }, 0);
+
+var BAND_COLORS = {
+  "160m":"#ef4444","80m":"#f97316","60m":"#eab308","40m":"#22c55e",
+  "30m":"#06b6d4","20m":"#3b82f6","17m":"#8b5cf6","15m":"#ec4899",
+  "12m":"#f43f5e","10m":"#fb923c","6m":"#a3e635","2m":"#67e8f9",
+  "1.25m":"#c084fc","70cm":"#f9a8d4"
+};
+
+var showNeeded = false;
+var lastWorked = new Set();
+
+function toggleNeeded() {
+  showNeeded = !showNeeded;
+  var btn = document.getElementById('needed-btn');
+  btn.textContent = showNeeded ? 'Show All' : 'Show Needed';
+  btn.className = showNeeded ? 'needed-btn active' : 'needed-btn';
+  renderSections(lastWorked);
+}
+
+function renderSections(worked) {
+  lastWorked = worked;
+  var container = document.getElementById('sec-groups');
+  var html = '';
+  for (var group in SECTIONS) {
+    var list = SECTIONS[group];
+    var filtered = showNeeded ? list.filter(function(s) { return !worked.has(s); }) : list;
+    if (showNeeded && filtered.length === 0) continue;
+    html += '<div>';
+    html += '<div class="sec-group-label">' + group + '</div>';
+    html += '<div class="sec-wrap">';
+    for (var i = 0; i < filtered.length; i++) {
+      var s = filtered[i];
+      var cls = worked.has(s) ? 'sec worked' : 'sec unworked';
+      html += '<span class="' + cls + '">' + s + '</span>';
+    }
+    html += '</div></div>';
+  }
+  container.innerHTML = html;
+}
+
+function renderBands(byBand) {
+  var max = 1;
+  for (var i = 0; i < byBand.length; i++) { if (byBand[i].count > max) max = byBand[i].count; }
+  var html = '';
+  for (var i = 0; i < byBand.length; i++) {
+    var b = byBand[i];
+    var pct = (b.count / max * 100).toFixed(1);
+    var color = BAND_COLORS[b.band] || '#555';
+    html += '<div class="band-row">';
+    html += '<div class="band-name">' + b.band + '</div>';
+    html += '<div class="band-track"><div class="band-fill" style="width:' + pct + '%;background:' + color + '"></div></div>';
+    html += '<div class="band-count">' + b.count + '</div>';
+    html += '</div>';
+  }
+  document.getElementById('band-list').innerHTML = html;
+}
+
+function renderOperators(byOp) {
+  var top = byOp.slice(0, 15);
+  var max = top.length > 0 ? top[0].count : 1;
+  var html = '';
+  for (var i = 0; i < top.length; i++) {
+    var o = top[i];
+    var pct = (o.count / max * 100).toFixed(1);
+    html += '<div class="op-row">';
+    html += '<div class="op-rank">' + (i + 1) + '</div>';
+    html += '<div class="op-call">' + (o.operator || '?') + '</div>';
+    html += '<div class="op-track"><div class="op-fill" style="width:' + pct + '%"></div></div>';
+    html += '<div class="op-count">' + o.count + '</div>';
+    html += '</div>';
+  }
+  document.getElementById('op-list').innerHTML = html;
+}
+
+async function fetchStats() {
+  try {
+    var res = await fetch('/api/stats');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var d = await res.json();
+
+    document.getElementById('total').textContent = Number(d.total).toLocaleString();
+    document.getElementById('rate-hour').textContent = d.rateLastHour != null ? d.rateLastHour : '—';
+
+    var worked = new Set(d.sectionsWorked || []);
+    document.getElementById('sec-count').textContent = worked.size;
+    document.getElementById('sec-fraction').textContent = worked.size + ' / ' + TOTAL_SECTIONS;
+
+    renderBands(d.byBand || []);
+    renderSections(worked);
+    renderOperators(d.byOperator || []);
+
+    document.getElementById('dot').className = 'dot live';
+    document.getElementById('updated-time').textContent =
+      'Updated ' + new Date(d.updated).toLocaleTimeString();
+  } catch (err) {
+    document.getElementById('dot').className = 'dot error';
+    document.getElementById('updated-time').textContent = 'Error: ' + err.message;
+  }
+}
+
+fetchStats();
+setInterval(fetchStats, 10000);
+</script>
+</body>
+</html>

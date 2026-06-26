@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"D:/Users/joshu/Documents/Code/contest.w4trc.org/worker/src\")",
+      "Bash(mkdir -p \"D:/Users/joshu/Documents/Code/contest.w4trc.org/agent\")",
+      "Bash(node --input-type=module --eval \"import { XMLParser } from 'fast-xml-parser';\")",
+      "Bash(node *)",
+      "WebSearch",
+      "WebFetch(domain:www.arrl.org)"
+    ]
+  }
+}

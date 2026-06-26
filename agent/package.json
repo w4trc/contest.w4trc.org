@@ -1,0 +1,16 @@
+{
+  "name": "w4trc-fieldday-agent",
+  "version": "1.0.0",
+  "description": "Local UDP→HTTPS bridge for N1MM+ to Cloudflare Worker",
+  "type": "module",
+  "main": "agent.js",
+  "scripts": {
+    "start": "node agent.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^4.4.1"
+  }
+}

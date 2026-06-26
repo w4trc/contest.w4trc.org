@@ -1,0 +1,15 @@
+{
+  "name": "w4trc-fieldday",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create fieldday",
+    "db:migrate": "wrangler d1 execute fieldday --file=schema.sql",
+    "db:migrate:remote": "wrangler d1 execute fieldday --file=schema.sql --remote"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
