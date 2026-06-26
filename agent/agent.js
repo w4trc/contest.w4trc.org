@@ -49,6 +49,26 @@ function normBand(b) {
   return BAND_MAP[key] || key;
 }
 
+// N1MM RadioInfo sends frequency in Hz
+function normBandFromHz(hz) {
+  const mhz = hz / 1e6;
+  if (mhz >= 1.8   && mhz <= 2.0)    return '160m';
+  if (mhz >= 3.5   && mhz <= 4.0)    return '80m';
+  if (mhz >= 5.33  && mhz <= 5.41)   return '60m';
+  if (mhz >= 7.0   && mhz <= 7.3)    return '40m';
+  if (mhz >= 10.1  && mhz <= 10.15)  return '30m';
+  if (mhz >= 14.0  && mhz <= 14.35)  return '20m';
+  if (mhz >= 18.068&& mhz <= 18.168) return '17m';
+  if (mhz >= 21.0  && mhz <= 21.45)  return '15m';
+  if (mhz >= 24.89 && mhz <= 24.99)  return '12m';
+  if (mhz >= 28.0  && mhz <= 29.7)   return '10m';
+  if (mhz >= 50.0  && mhz <= 54.0)   return '6m';
+  if (mhz >= 144.0 && mhz <= 148.0)  return '2m';
+  if (mhz >= 222.0 && mhz <= 225.0)  return '1.25m';
+  if (mhz >= 420.0 && mhz <= 450.0)  return '70cm';
+  return 'unknown';
+}
+
 // N1MM timestamps are UTC: "2026-06-28 18:43:38"
 function parseEpoch(ts) {
   if (!ts) return 0;
@@ -73,12 +93,16 @@ function extractContact(node) {
 
 function handlePacket(buf) {
   const text = buf.toString('utf8');
-  // Quick pre-filter: skip non-XML packets (radioinfo, score, etc.)
-  if (!text.includes('<contactinfo>') &&
-      !text.includes('<contactreplace>') &&
-      !text.includes('<contactdelete>')) return null;
+
+  const isContact = text.includes('<contactinfo>')    ||
+                    text.includes('<contactreplace>') ||
+                    text.includes('<contactdelete>');
+  const isRadio   = text.includes('<RadioInfo>') || text.includes('<radioinfo>');
+
+  if (!isContact && !isRadio) return null;
 
   const doc = xml.parse(text);
+
   if (doc.contactinfo)    return { op: 'upsert', qso: extractContact(doc.contactinfo) };
   if (doc.contactreplace) return { op: 'upsert', qso: extractContact(doc.contactreplace) };
   if (doc.contactdelete) {
@@ -90,6 +114,23 @@ function handlePacket(buf) {
       ts:   (d.timestamp || ''),
     };
   }
+
+  const r = doc.RadioInfo || doc.radioinfo;
+  if (r) {
+    const hz = Number(r.Freq || r.freq || 0);
+    return {
+      op: 'radiostate',
+      radio: {
+        nr:           String(r.RadioNr || r.radionr || '1'),
+        freq_hz:      hz,
+        band:         normBandFromHz(hz),
+        mode:         (r.Mode  || r.mode  || '').toUpperCase(),
+        operator:     (r.OpCall|| r.opcall|| '').toUpperCase(),
+        transmitting: String(r.IsTransmitting || r.istransmitting || '').toLowerCase() === 'true',
+      },
+    };
+  }
+
   return null;
 }
 
@@ -188,6 +229,24 @@ function scheduleRetry() {
 // Regular poll — catches anything that arrived while a retry was in flight
 setInterval(drainOnce, POLL_MS);
 
+// ── Radio state (fire-and-forget, not queued) ────────────────────────────────
+
+async function sendRadioState(radio) {
+  try {
+    await fetch(WORKER_URL + '/ingest', {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': 'Bearer ' + INGEST_SECRET,
+      },
+      body: JSON.stringify({ events: [{ op: 'radiostate', radio }] }),
+      signal: AbortSignal.timeout(8000),
+    });
+  } catch {
+    // Ephemeral — silently drop on network error; next packet will update
+  }
+}
+
 // ── UDP socket ───────────────────────────────────────────────────────────────
 
 const sock = dgram.createSocket({ type: 'udp4', reuseAddr: true });
@@ -200,6 +259,14 @@ sock.on('message', (msg, rinfo) => {
   try {
     const evt = handlePacket(msg);
     if (!evt) return;
+
+    if (evt.op === 'radiostate') {
+      const r = evt.radio;
+      console.log('[rx] radio', r.nr, r.operator || '-', r.band, r.mode, r.transmitting ? 'TX' : '');
+      sendRadioState(r);
+      return;
+    }
+
     enqueue(evt);
     if (evt.op === 'upsert') {
       const q = evt.qso;
@@ -209,7 +276,6 @@ sock.on('message', (msg, rinfo) => {
     }
   } catch (err) {
     console.error('[rx] parse error:', err.message);
-    // Print first 300 chars of the bad packet for on-site diagnosis
     console.error('[rx] packet preview:', msg.toString('utf8').slice(0, 300));
   }
 });

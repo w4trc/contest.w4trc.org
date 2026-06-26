@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>W4TRC Field Day</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 :root {
   --bg:      #0f0f0f;
@@ -125,6 +126,31 @@ nav {
   justify-content: space-between;
 }
 
+/* ── Mode breakdown ── */
+.mode-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 20px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.mode-title {
+  font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted); flex-shrink: 0; width: 60px;
+}
+.mode-bars { flex: 1; display: flex; gap: 10px; min-width: 0; flex-wrap: wrap; }
+.mode-item { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 80px; }
+.mode-label-row { display: flex; justify-content: space-between; align-items: baseline; }
+.mode-name  { font-size: 0.72rem; font-weight: 700; }
+.mode-count { font-size: 0.85rem; font-weight: 800; }
+.mode-track { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.mode-fill  { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+.mode-raw   { font-size: 0.65rem; color: var(--muted); margin-top: 2px; }
+
 /* ── Band bars ── */
 .band-list { display: flex; flex-direction: column; gap: 8px; }
 .band-row  { display: flex; align-items: center; gap: 8px; }
@@ -147,6 +173,51 @@ nav {
   transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
 }
 .op-count { width: 32px; font-size: 0.82rem; font-weight: 700; }
+
+/* ── Map ── */
+#section-map { height: 450px; width: 100%; border-radius: 10px; background: #0d0d0d; }
+.leaflet-tooltip {
+  background: #1a1a1a; border: 1px solid #2e2e2e;
+  color: #e8e8e8; font-size: 12px; box-shadow: none;
+}
+.leaflet-tooltip-top::before  { border-top-color:    #2e2e2e; }
+.leaflet-tooltip-bottom::before { border-bottom-color: #2e2e2e; }
+.leaflet-tooltip-left::before  { border-left-color:   #2e2e2e; }
+.leaflet-tooltip-right::before { border-right-color:  #2e2e2e; }
+.leaflet-control-attribution { background: rgba(15,15,15,0.7) !important; color: #555 !important; }
+.leaflet-control-attribution a { color: #555 !important; }
+
+/* ── On Air Now ── */
+.on-air {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 20px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.on-air-title {
+  font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted); flex-shrink: 0;
+}
+.radio-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface2); border-radius: 8px;
+  padding: 8px 14px;
+}
+.radio-tx {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: var(--muted);
+}
+.radio-tx.active { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.radio-nr   { font-size: 0.65rem; color: var(--muted); }
+.radio-op   { font-size: 0.9rem; font-weight: 700; }
+.radio-band { font-size: 0.75rem; font-weight: 600; padding: 2px 6px; border-radius: 3px; }
+.radio-freq { font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.radio-mode { font-size: 0.72rem; color: var(--muted); }
 
 /* ── Recent QSOs ── */
 .qso-list { display: flex; flex-direction: column; gap: 2px; }
@@ -240,7 +311,17 @@ nav {
       <div class="val yellow" id="sec-count">—</div>
       <div class="lbl">Sections worked</div>
     </div>
+    <div class="stat-card">
+      <div class="val" id="score" style="color:#a78bfa">—</div>
+      <div class="lbl">Est. points</div>
+    </div>
   </div>
+
+  <!-- Mode breakdown -->
+  <div id="mode-wrap"></div>
+
+  <!-- On Air Now -->
+  <div id="on-air-wrap"></div>
 
   <!-- Main grid -->
   <div class="grid">
@@ -267,6 +348,11 @@ nav {
     <div class="card full">
       <div class="card-title">Cumulative QSOs</div>
       <div id="chart"></div>
+    </div>
+
+    <!-- Map -->
+    <div class="card full" style="padding:0;overflow:hidden">
+      <div id="section-map"></div>
     </div>
 
     <!-- Sections -->
@@ -321,6 +407,77 @@ function toggleNeeded() {
   btn.textContent = showNeeded ? 'Show All' : 'Show Needed';
   btn.className = showNeeded ? 'needed-btn active' : 'needed-btn';
   renderSections(lastWorked, new Set());
+}
+
+var PHONE_MODES  = ["USB","LSB","SSB","FM","AM","PH"];
+var CW_MODES     = ["CW"];
+var DIGITAL_MODES = ["FT8","FT4","DIGI","RTTY","PSK","PSK31","PSK63","MFSK","JT65","JT9","DATA","DIGITAL"];
+
+function renderMode(byMode) {
+  var wrap = document.getElementById('mode-wrap');
+  if (!byMode || byMode.length === 0) { wrap.innerHTML = ''; return; }
+
+  var phone = 0, cw = 0, digital = 0, other = 0;
+  var phoneList = [], cwList = [], digitalList = [], otherList = [];
+
+  for (var i = 0; i < byMode.length; i++) {
+    var m = byMode[i].mode ? byMode[i].mode.toUpperCase() : '';
+    var n = byMode[i].count;
+    if (PHONE_MODES.indexOf(m) >= 0)   { phone   += n; phoneList.push(m + ':' + n); }
+    else if (CW_MODES.indexOf(m) >= 0) { cw      += n; cwList.push(m + ':' + n); }
+    else if (DIGITAL_MODES.indexOf(m) >= 0 || m.indexOf('FT') === 0 || m.indexOf('JS') === 0) {
+      digital += n; digitalList.push(m + ':' + n);
+    } else if (m) { other += n; otherList.push(m + ':' + n); }
+  }
+
+  var total = phone + cw + digital + other || 1;
+  var groups = [
+    { name: 'Phone',   count: phone,   color: '#facc15', raw: phoneList },
+    { name: 'CW',      count: cw,      color: '#22c55e', raw: cwList },
+    { name: 'Digital', count: digital, color: '#3b82f6', raw: digitalList },
+  ];
+  if (other > 0) groups.push({ name: 'Other', count: other, color: '#888', raw: otherList });
+
+  var html = '<div class="mode-card"><div class="mode-title">By Mode</div><div class="mode-bars">';
+  for (var i = 0; i < groups.length; i++) {
+    var g = groups[i];
+    if (g.count === 0) continue;
+    var pct = (g.count / total * 100).toFixed(1);
+    html += '<div class="mode-item">';
+    html += '<div class="mode-label-row"><span class="mode-name" style="color:' + g.color + '">' + g.name + '</span><span class="mode-count">' + g.count + '</span></div>';
+    html += '<div class="mode-track"><div class="mode-fill" style="width:' + pct + '%;background:' + g.color + '"></div></div>';
+    if (g.raw.length > 0) html += '<div class="mode-raw">' + g.raw.join(' · ') + '</div>';
+    html += '</div>';
+  }
+  html += '</div></div>';
+  wrap.innerHTML = html;
+}
+
+function fmtFreqMhz(hz) {
+  if (!hz) return '';
+  return (hz / 1e6).toFixed(3);
+}
+
+function renderOnAir(radios) {
+  var wrap = document.getElementById('on-air-wrap');
+  if (!radios || radios.length === 0) { wrap.innerHTML = ''; return; }
+
+  var html = '<div class="on-air"><span class="on-air-title">On Air Now</span>';
+  for (var i = 0; i < radios.length; i++) {
+    var r = radios[i];
+    if (!r.operator && !r.band) continue;
+    var color = BAND_COLORS[r.band] || '#555';
+    html += '<div class="radio-item">';
+    html += '<div class="radio-tx' + (r.transmitting ? ' active' : '') + '"></div>';
+    html += '<div class="radio-nr">R' + r.nr + '</div>';
+    html += '<div class="radio-op">' + (r.operator || '—') + '</div>';
+    html += '<div class="radio-band" style="background:' + color + ';color:#000">' + (r.band || '') + '</div>';
+    html += '<div class="radio-freq">' + fmtFreqMhz(r.freq_hz) + '</div>';
+    html += '<div class="radio-mode">' + (r.mode || '') + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+  wrap.innerHTML = html;
 }
 
 function renderChart(cumulative) {
@@ -474,6 +631,9 @@ async function fetchStats() {
     document.getElementById('total').textContent = Number(d.total).toLocaleString();
     document.getElementById('rate-hour').textContent = d.rateLastHour != null ? d.rateLastHour : '—';
     document.getElementById('rate-10').textContent = d.rateLast10 != null ? d.rateLast10 : '—';
+    document.getElementById('score').textContent = d.score != null ? Number(d.score).toLocaleString() : '—';
+    renderMode(d.byMode);
+    renderOnAir(d.radios);
     renderChart(d.cumulative);
 
     var worked = new Set(d.sectionsWorked || []);
@@ -494,6 +654,7 @@ async function fetchStats() {
     renderOperators(d.byOperator || []);
     renderRecent(d.recent || [], newSections);
     renderSections(worked, newSections);
+    updateMap(worked);
 
     document.getElementById('dot').className = 'dot live';
     document.getElementById('updated-time').textContent =
@@ -506,6 +667,101 @@ async function fetchStats() {
 
 fetchStats();
 setInterval(fetchStats, 10000);
+</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── Section map ──────────────────────────────────────────────────────────────
+
+// State/province name → ARRL sections (state name matches GeoJSON properties.name)
+var STATE_SECTIONS = {
+  "Connecticut":["CT"], "Massachusetts":["EMA","WMA"],
+  "Maine":["ME"], "New Hampshire":["NH"], "Rhode Island":["RI"], "Vermont":["VT"],
+  "New York":["ENY","NLI","NNY","WNY"], "New Jersey":["NNJ","SNJ"],
+  "Delaware":["DE"], "Pennsylvania":["EPA","WPA"], "Maryland":["MDC"],
+  "Illinois":["IL"], "Indiana":["IN"], "Wisconsin":["WI"],
+  "Kentucky":["KY"], "Michigan":["MI"], "Ohio":["OH"],
+  "Minnesota":["MN"], "North Dakota":["ND"], "South Dakota":["SD"],
+  "Arkansas":["AR"], "Louisiana":["LA"], "Mississippi":["MS"], "Tennessee":["TN"],
+  "Iowa":["IA"], "Kansas":["KS"], "Missouri":["MO"], "Nebraska":["NE"],
+  "Colorado":["CO"], "New Mexico":["NM"], "Utah":["UT"], "Wyoming":["WY"],
+  "Alaska":["AK"], "Washington":["EWA","WWA"],
+  "Idaho":["ID"], "Montana":["MT"], "Oregon":["OR"],
+  "California":["EB","LAX","ORG","SCV","SB","SDG","SF","SJV","SV"],
+  "Nevada":["NV"], "Arizona":["AZ"],
+  "Alabama":["AL"], "Georgia":["GA"], "Florida":["NFL","SFL","WCF"],
+  "North Carolina":["NC"], "South Carolina":["SC"],
+  "Virginia":["VA"], "West Virginia":["WV"],
+  "Texas":["NTX","STX","WTX"], "Oklahoma":["OK"],
+};
+
+var PROVINCE_SECTIONS = {
+  "Alberta":["AB"], "British Columbia":["BC"],
+  "Ontario":["GH","ONE","ONN","ONS"],
+  "Manitoba":["MB"], "New Brunswick":["NB"],
+  "Newfoundland and Labrador":["NL"],
+  "Nova Scotia":["NS"], "Prince Edward Island":["PE"],
+  "Quebec":["QC"], "Saskatchewan":["SK"],
+  "Northwest Territories":["TER"], "Yukon":["TER"], "Nunavut":["TER"],
+};
+
+var mapWorked = new Set();
+var usLayer = null, caLayer = null;
+
+function geoStyle(name, mapping) {
+  var sections = mapping[name] || [];
+  if (sections.length === 0) return { fillColor:'#111', fillOpacity:0.5, color:'#222', weight:0.5 };
+  var workedCount = sections.filter(function(s){ return mapWorked.has(s); }).length;
+  if (workedCount === 0)               return { fillColor:'#1a2e1a', fillOpacity:0.8, color:'#2a3a2a', weight:1 };
+  if (workedCount === sections.length) return { fillColor:'#22c55e', fillOpacity:0.75, color:'#16a34a', weight:1 };
+  return                                      { fillColor:'#86efac', fillOpacity:0.7,  color:'#22c55e', weight:1 };
+}
+
+function geoTooltip(name, mapping) {
+  var sections = mapping[name] || [];
+  if (sections.length === 0) return null;
+  var html = '<b>' + name + '</b><br>';
+  html += sections.map(function(s) {
+    var color = mapWorked.has(s) ? '#22c55e' : '#555';
+    return '<span style="color:' + color + ';font-weight:700">' + s + '</span>';
+  }).join(' ');
+  return html;
+}
+
+function makeLayer(data, mapping) {
+  return L.geoJSON(data, {
+    style: function(f) {
+      return geoStyle(f.properties.name, mapping);
+    },
+    onEachFeature: function(f, layer) {
+      var tip = geoTooltip(f.properties.name, mapping);
+      if (tip) layer.bindTooltip(tip, { sticky: true });
+    }
+  });
+}
+
+function updateMap(worked) {
+  mapWorked = worked;
+  if (usLayer) usLayer.setStyle(function(f){ return geoStyle(f.properties.name, STATE_SECTIONS); });
+  if (caLayer) caLayer.setStyle(function(f){ return geoStyle(f.properties.name, PROVINCE_SECTIONS); });
+}
+
+var sectionMap = L.map('section-map', { zoomSnap: 0.5 }).setView([47, -95], 3.5);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_matter_nolabels/{z}/{x}/{y}{r}.png', {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+  subdomains: 'abcd', maxZoom: 10,
+}).addTo(sectionMap);
+
+Promise.all([
+  fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json').then(function(r){ return r.json(); }),
+  fetch('https://raw.githubusercontent.com/codeforgermany/click_that_hood/master/public/data/canada.geojson').then(function(r){ return r.json(); }),
+]).then(function(results) {
+  usLayer = makeLayer(results[0], STATE_SECTIONS).addTo(sectionMap);
+  caLayer = makeLayer(results[1], PROVINCE_SECTIONS).addTo(sectionMap);
+  updateMap(lastWorked);
+}).catch(function(e) {
+  console.warn('Map GeoJSON load failed:', e);
+});
 </script>
 </body>
 </html>

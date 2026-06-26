@@ -67,6 +67,13 @@ async function handleIngest(request, env) {
           env.DB.prepare('DELETE FROM qsos WHERE call = ? AND ts = ?').bind(evt.call, evt.ts)
         );
       }
+    } else if (evt.op === 'radiostate' && evt.radio) {
+      const r = evt.radio;
+      const val = JSON.stringify({ ...r, updated: new Date().toISOString() });
+      stmts.push(
+        env.DB.prepare('INSERT OR REPLACE INTO meta (k, v) VALUES (?, ?)')
+          .bind('radio:' + r.nr, val)
+      );
     }
   }
 
@@ -81,7 +88,7 @@ async function handleIngest(request, env) {
 }
 
 async function handleStats(env) {
-  const [totalRes, bandRes, opRes, sectionRes, rateHourRes, recentRes, rate10Res, cumRes] =
+  const [totalRes, bandRes, opRes, sectionRes, rateHourRes, recentRes, rate10Res, cumRes, scoreRes, radiosRes, modeRes] =
     await env.DB.batch([
       env.DB.prepare('SELECT COUNT(*) AS total FROM qsos'),
       env.DB.prepare('SELECT band, COUNT(*) AS c FROM qsos GROUP BY band ORDER BY c DESC'),
@@ -101,6 +108,9 @@ async function handleStats(env) {
          FROM qsos WHERE ts_epoch > 0
          GROUP BY bucket ORDER BY bucket`
       ),
+      env.DB.prepare('SELECT SUM(points) AS score FROM qsos'),
+      env.DB.prepare("SELECT v FROM meta WHERE k LIKE 'radio:%' ORDER BY k"),
+      env.DB.prepare('SELECT mode, COUNT(*) AS c FROM qsos GROUP BY mode ORDER BY c DESC'),
     ]);
 
   // Convert per-bucket counts to running cumulative total
@@ -117,9 +127,12 @@ async function handleStats(env) {
     byOperator: opRes.results.map(r => ({ operator: r.operator, count: r.c })),
     sectionsWorked: sectionRes.results.map(r => r.section).filter(Boolean),
     rateLastHour: rateHourRes.results[0]?.cnt ?? 0,
-    rateLast10: rate10Res.results[0]?.cnt ?? 0,
-    recent: recentRes.results,
+    rateLast10:   rate10Res.results[0]?.cnt ?? 0,
+    score:        scoreRes.results[0]?.score ?? 0,
+    recent:       recentRes.results,
     cumulative,
+    radios:  radiosRes.results.map(r => JSON.parse(r.v)),
+    byMode:  modeRes.results.map(r => ({ mode: r.mode, count: r.c })),
   };
 
   return new Response(JSON.stringify(stats), {
