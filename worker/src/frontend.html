@@ -233,6 +233,10 @@ nav {
       <div class="lbl">QSOs / last hour</div>
     </div>
     <div class="stat-card">
+      <div class="val green" id="rate-10">—</div>
+      <div class="lbl">QSOs / last 10 min</div>
+    </div>
+    <div class="stat-card">
       <div class="val yellow" id="sec-count">—</div>
       <div class="lbl">Sections worked</div>
     </div>
@@ -257,6 +261,12 @@ nav {
     <div class="card">
       <div class="card-title">Recent QSOs</div>
       <div class="qso-list" id="qso-list"></div>
+    </div>
+
+    <!-- Cumulative chart -->
+    <div class="card full">
+      <div class="card-title">Cumulative QSOs</div>
+      <div id="chart"></div>
     </div>
 
     <!-- Sections -->
@@ -311,6 +321,67 @@ function toggleNeeded() {
   btn.textContent = showNeeded ? 'Show All' : 'Show Needed';
   btn.className = showNeeded ? 'needed-btn active' : 'needed-btn';
   renderSections(lastWorked, new Set());
+}
+
+function renderChart(cumulative) {
+  var container = document.getElementById('chart');
+  if (!cumulative || cumulative.length < 2) {
+    container.innerHTML = '<p style="color:var(--muted);text-align:center;padding:32px 0;font-size:0.8rem">No data yet</p>';
+    return;
+  }
+
+  var W = 1000, H = 160;
+  var pl = 48, pr = 16, pt = 10, pb = 28;
+  var iw = W - pl - pr, ih = H - pt - pb;
+
+  var maxN = 0;
+  for (var i = 0; i < cumulative.length; i++) if (cumulative[i].n > maxN) maxN = cumulative[i].n;
+  if (maxN === 0) maxN = 1;
+
+  var minT = cumulative[0].t;
+  var maxT = cumulative[cumulative.length - 1].t;
+  var rangeT = maxT - minT || 1;
+
+  function px(t) { return (pl + ((t - minT) / rangeT) * iw).toFixed(1); }
+  function py(n) { return (pt + ih - (n / maxN) * ih).toFixed(1); }
+
+  // Line + area
+  var linePts = '', areaPts = px(minT) + ',' + (pt + ih);
+  for (var i = 0; i < cumulative.length; i++) {
+    var cx = px(cumulative[i].t), cy = py(cumulative[i].n);
+    linePts  += (i === 0 ? 'M ' : ' L ') + cx + ',' + cy;
+    areaPts  += ' ' + cx + ',' + cy;
+  }
+  areaPts += ' ' + px(maxT) + ',' + (pt + ih);
+
+  // Y gridlines + labels (3 levels)
+  var yLevels = [0, Math.round(maxN / 2), maxN];
+  var gridLines = '', yLabels = '';
+  for (var i = 0; i < yLevels.length; i++) {
+    var gy = py(yLevels[i]);
+    gridLines += '<line x1="' + pl + '" y1="' + gy + '" x2="' + (pl + iw) + '" y2="' + gy + '" stroke="#252525" stroke-width="1"/>';
+    yLabels   += '<text x="' + (pl - 6) + '" y="' + (parseFloat(gy) + 4) + '" text-anchor="end" fill="#555" font-size="11">' + yLevels[i] + '</text>';
+  }
+
+  // X time labels every 2 hours
+  var xLabels = '', xTicks = '';
+  var step = 7200;
+  var firstTick = Math.ceil(minT / step) * step;
+  for (var t = firstTick; t <= maxT; t += step) {
+    var lx = px(t);
+    var d = new Date(t * 1000);
+    var label = ('0' + d.getUTCHours()).slice(-2) + ':00';
+    xTicks  += '<line x1="' + lx + '" y1="' + (pt + ih) + '" x2="' + lx + '" y2="' + (pt + ih + 4) + '" stroke="#444" stroke-width="1"/>';
+    xLabels += '<text x="' + lx + '" y="' + (pt + ih + 16) + '" text-anchor="middle" fill="#555" font-size="11">' + label + ' UTC</text>';
+  }
+
+  container.innerHTML =
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">' +
+    gridLines +
+    '<path d="' + areaPts + '" fill="rgba(59,130,246,0.1)"/>' +
+    '<path d="' + linePts + '" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+    yLabels + xTicks + xLabels +
+    '</svg>';
 }
 
 function fmtTime(ts) {
@@ -402,6 +473,8 @@ async function fetchStats() {
 
     document.getElementById('total').textContent = Number(d.total).toLocaleString();
     document.getElementById('rate-hour').textContent = d.rateLastHour != null ? d.rateLastHour : '—';
+    document.getElementById('rate-10').textContent = d.rateLast10 != null ? d.rateLast10 : '—';
+    renderChart(d.cumulative);
 
     var worked = new Set(d.sectionsWorked || []);
 

@@ -81,7 +81,7 @@ async function handleIngest(request, env) {
 }
 
 async function handleStats(env) {
-  const [totalRes, bandRes, opRes, sectionRes, rateRes, recentRes] =
+  const [totalRes, bandRes, opRes, sectionRes, rateHourRes, recentRes, rate10Res, cumRes] =
     await env.DB.batch([
       env.DB.prepare('SELECT COUNT(*) AS total FROM qsos'),
       env.DB.prepare('SELECT band, COUNT(*) AS c FROM qsos GROUP BY band ORDER BY c DESC'),
@@ -93,7 +93,22 @@ async function handleStats(env) {
       env.DB.prepare(
         'SELECT call, band, operator, section, ts FROM qsos ORDER BY ts_epoch DESC LIMIT 20'
       ),
+      env.DB.prepare(
+        "SELECT COUNT(*) AS cnt FROM qsos WHERE ts_epoch >= CAST(strftime('%s','now') AS INTEGER) - 600"
+      ),
+      env.DB.prepare(
+        `SELECT (ts_epoch / 1800) * 1800 AS bucket, COUNT(*) AS n
+         FROM qsos WHERE ts_epoch > 0
+         GROUP BY bucket ORDER BY bucket`
+      ),
     ]);
+
+  // Convert per-bucket counts to running cumulative total
+  let running = 0;
+  const cumulative = cumRes.results.map(r => {
+    running += r.n;
+    return { t: r.bucket, n: running };
+  });
 
   const stats = {
     updated: new Date().toISOString(),
@@ -101,8 +116,10 @@ async function handleStats(env) {
     byBand: bandRes.results.map(r => ({ band: r.band, count: r.c })),
     byOperator: opRes.results.map(r => ({ operator: r.operator, count: r.c })),
     sectionsWorked: sectionRes.results.map(r => r.section).filter(Boolean),
-    rateLastHour: rateRes.results[0]?.cnt ?? 0,
+    rateLastHour: rateHourRes.results[0]?.cnt ?? 0,
+    rateLast10: rate10Res.results[0]?.cnt ?? 0,
     recent: recentRes.results,
+    cumulative,
   };
 
   return new Response(JSON.stringify(stats), {
