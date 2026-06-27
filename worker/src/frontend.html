@@ -187,36 +187,6 @@ nav {
 .leaflet-control-attribution { background: rgba(15,15,15,0.7) !important; color: #555 !important; }
 .leaflet-control-attribution a { color: #555 !important; }
 
-/* ── On Air Now ── */
-.on-air {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px 20px;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-.on-air-title {
-  font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.1em; color: var(--muted); flex-shrink: 0;
-}
-.radio-item {
-  display: flex; align-items: center; gap: 10px;
-  background: var(--surface2); border-radius: 8px;
-  padding: 8px 14px;
-}
-.radio-tx {
-  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-  background: var(--muted);
-}
-.radio-tx.active { background: var(--red); box-shadow: 0 0 6px var(--red); }
-.radio-nr   { font-size: 0.65rem; color: var(--muted); }
-.radio-op   { font-size: 0.9rem; font-weight: 700; }
-.radio-band { font-size: 0.75rem; font-weight: 600; padding: 2px 6px; border-radius: 3px; }
-.radio-mode { font-size: 0.72rem; color: var(--muted); }
 
 /* ── Recent QSOs ── */
 .qso-list { display: flex; flex-direction: column; gap: 2px; }
@@ -318,9 +288,6 @@ nav {
 
   <!-- Mode breakdown -->
   <div id="mode-wrap"></div>
-
-  <!-- On Air Now -->
-  <div id="on-air-wrap"></div>
 
   <!-- Main grid -->
   <div class="grid">
@@ -452,26 +419,6 @@ function renderMode(byMode) {
   wrap.innerHTML = html;
 }
 
-function renderOnAir(radios) {
-  var wrap = document.getElementById('on-air-wrap');
-  if (!radios || radios.length === 0) { wrap.innerHTML = ''; return; }
-
-  var html = '<div class="on-air"><span class="on-air-title">On Air Now</span>';
-  for (var i = 0; i < radios.length; i++) {
-    var r = radios[i];
-    if (!r.operator && !r.band) continue;
-    var color = BAND_COLORS[r.band] || '#555';
-    html += '<div class="radio-item">';
-    html += '<div class="radio-tx' + (r.transmitting ? ' active' : '') + '"></div>';
-    html += '<div class="radio-nr">R' + r.nr + '</div>';
-    html += '<div class="radio-op">' + (r.operator || '—') + '</div>';
-    html += '<div class="radio-band" style="background:' + color + ';color:#000">' + (r.band || '') + '</div>';
-    html += '<div class="radio-mode">' + (r.mode || '') + '</div>';
-    html += '</div>';
-  }
-  html += '</div>';
-  wrap.innerHTML = html;
-}
 
 function renderChart(cumulative) {
   var container = document.getElementById('chart');
@@ -626,7 +573,6 @@ async function fetchStats() {
     document.getElementById('rate-10').textContent = d.rateLast10 != null ? d.rateLast10 : '—';
     document.getElementById('score').textContent = d.score != null ? Number(d.score).toLocaleString() : '—';
     renderMode(d.byMode);
-    renderOnAir(d.radios);
     renderChart(d.cumulative);
 
     var worked = new Set(d.sectionsWorked || []);
