@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>W4TRC Field Day</title>
+<style>
+:root {
+  --bg:      #0f0f0f;
+  --surface: #1a1a1a;
+  --surface2: #222;
+  --border:  #2e2e2e;
+  --text:    #e8e8e8;
+  --muted:   #777;
+  --green:   #22c55e;
+  --blue:    #3b82f6;
+  --yellow:  #facc15;
+  --red:     #ef4444;
+  --purple:  #a78bfa;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+.hdr {
+  background: var(--surface);
+  border-bottom: 2px solid var(--yellow);
+  padding: 10px 14px 9px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+  -webkit-app-region: drag;
+}
+
+.hdr-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--muted); flex-shrink: 0;
+  transition: background 0.4s, box-shadow 0.4s;
+  -webkit-app-region: no-drag;
+}
+.hdr-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.hdr-dot.err  { background: var(--red); }
+
+.hdr-callsign {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--yellow);
+  letter-spacing: 0.12em;
+}
+
+.hdr-sep { color: var(--border); }
+
+.hdr-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.hdr-class {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 0.06em;
+}
+
+.hdr-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.hdr-updated { font-size: 0.62rem; color: var(--muted); }
+
+.pin-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: border-color 0.15s, color 0.15s;
+}
+.pin-btn:hover { border-color: var(--blue); color: var(--blue); }
+.pin-btn.on    { border-color: var(--yellow); color: var(--yellow); }
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 8px 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  user-select: none;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--yellow); border-bottom-color: var(--yellow); }
+
+/* ── Views ── */
+.view {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 14px;
+}
+.view.active { display: block; }
+.view::-webkit-scrollbar { width: 4px; }
+.view::-webkit-scrollbar-track { background: transparent; }
+.view::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── Section title ── */
+.sec-title {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin: 14px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.sec-title:first-child { margin-top: 0; }
+
+/* ── Stat cards ── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 7px;
+  margin-bottom: 7px;
+}
+.stat-grid.two { grid-template-columns: 1fr 1fr; }
+
+.scard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 11px;
+}
+.scard .val {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.scard .val.green  { color: var(--green); }
+.scard .val.yellow { color: var(--yellow); }
+.scard .val.purple { color: var(--purple); }
+.scard .lbl {
+  font-size: 0.58rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 3px;
+}
+
+/* ── Band bars ── */
+.band-list { display: flex; flex-direction: column; gap: 5px; }
+.band-row  { display: flex; align-items: center; gap: 8px; }
+.band-nm   { width: 40px; text-align: right; flex-shrink: 0; font-size: 0.78rem; font-weight: 700; }
+.band-track { flex: 1; height: 16px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.band-fill  { height: 100%; border-radius: 3px; min-width: 3px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
+.band-ct   { width: 32px; font-size: 0.78rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ── Recent QSOs ── */
+.qso-list { display: flex; flex-direction: column; gap: 1px; }
+.qso-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 44px 32px 1fr;
+  gap: 5px;
+  align-items: center;
+  padding: 4px 5px;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+.qso-row.new-q { animation: flash-q 2s ease-out forwards; }
+@keyframes flash-q {
+  0%   { background: rgba(250,204,21,0.18); }
+  100% { background: transparent; }
+}
+.qso-time { font-size: 0.63rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.qso-call { font-size: 0.8rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qso-band {
+  font-size: 0.6rem; font-weight: 700;
+  padding: 1px 4px; border-radius: 2px; text-align: center;
+}
+.qso-sec     { font-size: 0.7rem; font-weight: 700; color: var(--green); }
+.qso-sec.dim { color: var(--muted); }
+.qso-op { font-size: 0.63rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Band Plan ── */
+.bp-band {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 7px;
+}
+.bp-band-hdr {
+  display: flex;
+  align-items: center;
+  padding: 8px 11px;
+  gap: 8px;
+  background: var(--surface2);
+}
+.bp-band-name { font-size: 0.9rem; font-weight: 800; min-width: 42px; }
+.bp-band-mhz  { font-size: 0.62rem; color: var(--muted); flex: 1; }
+.bp-count {
+  font-size: 0.72rem; font-weight: 700;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 1px 7px; border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.bp-count.has { background: var(--green); border-color: var(--green); color: #000; }
+
+.bp-segs { padding: 8px 11px; display: flex; flex-direction: column; gap: 5px; }
+.bp-seg  { display: flex; align-items: center; gap: 8px; }
+.bp-seg-dot  { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.bp-seg-mode { width: 26px; font-size: 0.62rem; font-weight: 700; }
+.bp-seg-freq { font-size: 0.7rem; font-variant-numeric: tabular-nums; color: var(--text); }
+
+/* ── Conditions ── */
+.idx-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.idx-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 4px;
+  text-align: center;
+}
+.idx-val {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.idx-lbl {
+  font-size: 0.56rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 3px;
+}
+
+.cond-hdr {
+  display: grid;
+  grid-template-columns: 82px 1fr 1fr;
+  gap: 6px;
+  padding: 3px 0 6px;
+  font-size: 0.6rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.cond-row {
+  display: grid;
+  grid-template-columns: 82px 1fr 1fr;
+  gap: 6px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+.cond-row:last-child { border-bottom: none; }
+.cond-name { font-size: 0.72rem; font-weight: 700; color: var(--muted); }
+
+.badge {
+  font-size: 0.62rem; font-weight: 700;
+  padding: 2px 5px; border-radius: 3px;
+  text-align: center; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.badge.good   { background: #14532d; color: #22c55e; border: 1px solid #22c55e; }
+.badge.fair   { background: #713f12; color: #facc15; border: 1px solid #facc15; }
+.badge.poor   { background: #7f1d1d; color: #ef4444; border: 1px solid #ef4444; }
+.badge.storm  { background: #450a0a; color: #dc2626; border: 1px solid #dc2626; }
+.badge.none   { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+.vhf-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.vhf-row:last-child { border-bottom: none; }
+.vhf-name { font-size: 0.7rem; color: var(--muted); }
+
+.conds-updated { font-size: 0.6rem; color: var(--muted); text-align: right; margin-top: 10px; }
+
+.refresh-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: border-color 0.15s, color 0.15s;
+}
+.refresh-btn:hover { border-color: var(--blue); color: var(--blue); }
+.refresh-btn:disabled { opacity: 0.4; cursor: default; }
+
+.empty { color: var(--muted); font-size: 0.78rem; text-align: center; padding: 20px 0; }
+
+/* ── Sections ── */
+.sects-summary {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.sects-summary strong { color: var(--green); }
+
+.div-group { margin-bottom: 14px; }
+
+.div-title {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sect-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 4px;
+  border-radius: 4px;
+}
+.sect-row.worked { background: rgba(34,197,94,0.07); }
+
+.sect-ab {
+  font-size: 0.65rem;
+  font-weight: 800;
+  font-family: 'Courier New', monospace;
+  min-width: 36px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  text-align: center;
+  flex-shrink: 0;
+  background: var(--surface2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.sect-row.worked .sect-ab {
+  background: var(--green);
+  color: #000;
+  border-color: var(--green);
+}
+
+.sect-name {
+  font-size: 0.72rem;
+  color: var(--muted);
+  flex: 1;
+}
+.sect-row.worked .sect-name { color: var(--text); }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header class="hdr">
+  <div class="hdr-dot" id="hdr-dot"></div>
+  <span class="hdr-callsign">W4TRC</span>
+  <span class="hdr-sep">·</span>
+  <div class="hdr-class">3A · TN</div>
+  <div class="hdr-right">
+    <button class="pin-btn" id="pin-btn" onclick="togglePin()">Top</button>
+    <span class="hdr-updated" id="hdr-updated">Connecting…</span>
+  </div>
+</header>
+
+<!-- ── Tabs ── -->
+<nav class="tabs">
+  <div class="tab active" id="tab-stats" onclick="switchTab('stats')">Stats</div>
+  <div class="tab"        id="tab-bands" onclick="switchTab('bands')">Bands</div>
+  <div class="tab"        id="tab-conds" onclick="switchTab('conds')">Conds</div>
+  <div class="tab"        id="tab-sects" onclick="switchTab('sects')">Sections</div>
+</nav>
+
+<!-- ── Stats View ── -->
+<div class="view active" id="view-stats">
+  <div class="stat-grid">
+    <div class="scard">
+      <div class="val" id="s-total">—</div>
+      <div class="lbl">Total QSOs</div>
+    </div>
+    <div class="scard">
+      <div class="val green" id="s-rate-hr">—</div>
+      <div class="lbl">/ Hour</div>
+    </div>
+    <div class="scard">
+      <div class="val green" id="s-rate-10">—</div>
+      <div class="lbl">/ 10 Min</div>
+    </div>
+  </div>
+  <div class="stat-grid two">
+    <div class="scard">
+      <div class="val purple" id="s-score">—</div>
+      <div class="lbl">Est. Points</div>
+    </div>
+    <div class="scard">
+      <div class="val yellow" id="s-secs">—</div>
+      <div class="lbl">Sections</div>
+    </div>
+  </div>
+
+  <div class="sec-title">By Band</div>
+  <div class="band-list" id="band-list"></div>
+
+  <div class="sec-title">Recent QSOs</div>
+  <div class="qso-list" id="qso-list"></div>
+</div>
+
+<!-- ── Band Plan View ── -->
+<div class="view" id="view-bands">
+  <div id="bp-list"></div>
+</div>
+
+<!-- ── Conditions View ── -->
+<div class="view" id="view-conds">
+  <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between">
+    <span>Solar Indices</span>
+    <button class="refresh-btn" id="conds-refresh-btn" onclick="refreshConditions()">Refresh</button>
+  </div>
+  <div class="idx-grid">
+    <div class="idx-card"><div class="idx-val" id="idx-sfi">—</div><div class="idx-lbl">SFI</div></div>
+    <div class="idx-card"><div class="idx-val" id="idx-sn">—</div><div class="idx-lbl">SN</div></div>
+    <div class="idx-card"><div class="idx-val" id="idx-k">—</div><div class="idx-lbl">K-idx</div></div>
+    <div class="idx-card"><div class="idx-val" id="idx-a">—</div><div class="idx-lbl">A-idx</div></div>
+    <div class="idx-card"><div class="idx-val" id="idx-xray">—</div><div class="idx-lbl">X-ray</div></div>
+  </div>
+
+  <div class="sec-title">HF Band Conditions</div>
+  <div class="cond-hdr"><div></div><div>Day</div><div>Night</div></div>
+  <div id="cond-table"><div class="empty">Press Refresh to load conditions</div></div>
+
+  <div class="sec-title">VHF Conditions</div>
+  <div id="vhf-table"><div class="empty">Press Refresh to load conditions</div></div>
+
+  <div class="conds-updated" id="conds-updated"></div>
+</div>
+
+<!-- ── Sections View ── -->
+<div class="view" id="view-sects">
+  <div class="sects-summary" id="sects-summary">— / 86 Sections Worked</div>
+  <div id="sects-container"></div>
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+var API_URL = 'https://contest.w4trc.org/api/stats';
+
+// ── Band colors (matching web frontend) ────────────────────────────────────
+var BAND_COLORS = {
+  '160m':'#ef4444','80m':'#f97316','60m':'#eab308','40m':'#22c55e',
+  '30m':'#06b6d4','20m':'#3b82f6','17m':'#8b5cf6','15m':'#ec4899',
+  '12m':'#f43f5e','10m':'#fb923c','6m':'#a3e635','2m':'#67e8f9',
+  '1.25m':'#c084fc','70cm':'#f9a8d4'
+};
+
+// ── Field Day Band Plan ─────────────────────────────────────────────────────
+var BAND_PLAN = [
+  { band:'160m', mhz:'1.8 MHz',
+    cw:'1.800 – 1.840', ssb:'1.843 – 2.000' },
+  { band:'80m',  mhz:'3.5 MHz',
+    cw:'3.500 – 3.600', ssb:'3.600 – 4.000', dig:'3.570 – 3.600' },
+  { band:'40m',  mhz:'7 MHz',
+    cw:'7.000 – 7.125', ssb:'7.125 – 7.300', dig:'7.070 – 7.100' },
+  { band:'20m',  mhz:'14 MHz',
+    cw:'14.000 – 14.150', ssb:'14.150 – 14.350', dig:'14.070 – 14.099' },
+  { band:'15m',  mhz:'21 MHz',
+    cw:'21.000 – 21.200', ssb:'21.200 – 21.450', dig:'21.070 – 21.110' },
+  { band:'10m',  mhz:'28 MHz',
+    cw:'28.000 – 28.300', ssb:'28.300 – 29.700', dig:'28.070 – 28.150' },
+  { band:'6m',   mhz:'50 MHz',
+    cw:'50.000 – 50.100', ssb:'50.100 – 54.000' },
+  { band:'2m',   mhz:'144 MHz',
+    cw:'144.000 – 144.100', ssb:'144.100 – 148.000' },
+  { band:'1.25m',mhz:'222 MHz',
+    ssb:'222.000 – 225.000' },
+  { band:'70cm', mhz:'432 MHz',
+    ssb:'420.000 – 450.000' },
+];
+
+// ── ARRL Sections by Division ──────────────────────────────────────────────
+var SECTIONS_DATA = [
+  { div:'New England', sects:[
+    {ab:'CT',  name:'Connecticut'},
+    {ab:'EMA', name:'Eastern Massachusetts'},
+    {ab:'ME',  name:'Maine'},
+    {ab:'NH',  name:'New Hampshire'},
+    {ab:'RI',  name:'Rhode Island'},
+    {ab:'VT',  name:'Vermont'},
+    {ab:'WMA', name:'Western Massachusetts'},
+  ]},
+  { div:'Hudson', sects:[
+    {ab:'ENY', name:'Eastern New York'},
+    {ab:'NLI', name:'New York City-Long Island'},
+    {ab:'NNY', name:'Northern New York'},
+    {ab:'WNY', name:'Western New York'},
+  ]},
+  { div:'Atlantic', sects:[
+    {ab:'DE',  name:'Delaware'},
+    {ab:'EPA', name:'Eastern Pennsylvania'},
+    {ab:'MDC', name:'Maryland-DC'},
+    {ab:'NNJ', name:'Northern New Jersey'},
+    {ab:'SNJ', name:'Southern New Jersey'},
+    {ab:'WPA', name:'Western Pennsylvania'},
+    {ab:'WV',  name:'West Virginia'},
+  ]},
+  { div:'Southeastern', sects:[
+    {ab:'AL',  name:'Alabama'},
+    {ab:'GA',  name:'Georgia'},
+    {ab:'NC',  name:'North Carolina'},
+    {ab:'NFL', name:'Northern Florida'},
+    {ab:'PR',  name:'Puerto Rico'},
+    {ab:'SC',  name:'South Carolina'},
+    {ab:'SFL', name:'Southern Florida'},
+    {ab:'VA',  name:'Virginia'},
+    {ab:'VI',  name:'US Virgin Islands'},
+    {ab:'WCF', name:'West Central Florida'},
+  ]},
+  { div:'Delta', sects:[
+    {ab:'AR',  name:'Arkansas'},
+    {ab:'LA',  name:'Louisiana'},
+    {ab:'MS',  name:'Mississippi'},
+    {ab:'TN',  name:'Tennessee'},
+  ]},
+  { div:'Great Lakes', sects:[
+    {ab:'KY',  name:'Kentucky'},
+    {ab:'MI',  name:'Michigan'},
+    {ab:'OH',  name:'Ohio'},
+  ]},
+  { div:'Central', sects:[
+    {ab:'IL',  name:'Illinois'},
+    {ab:'IN',  name:'Indiana'},
+    {ab:'WI',  name:'Wisconsin'},
+  ]},
+  { div:'Midwest', sects:[
+    {ab:'IA',  name:'Iowa'},
+    {ab:'KS',  name:'Kansas'},
+    {ab:'MO',  name:'Missouri'},
+    {ab:'NE',  name:'Nebraska'},
+  ]},
+  { div:'Dakota', sects:[
+    {ab:'MN',  name:'Minnesota'},
+    {ab:'ND',  name:'North Dakota'},
+    {ab:'SD',  name:'South Dakota'},
+  ]},
+  { div:'Rocky Mountain', sects:[
+    {ab:'CO',  name:'Colorado'},
+    {ab:'NM',  name:'New Mexico'},
+    {ab:'UT',  name:'Utah'},
+    {ab:'WY',  name:'Wyoming'},
+  ]},
+  { div:'Northwestern', sects:[
+    {ab:'AK',  name:'Alaska'},
+    {ab:'EWA', name:'Eastern Washington'},
+    {ab:'ID',  name:'Idaho'},
+    {ab:'MT',  name:'Montana'},
+    {ab:'OR',  name:'Oregon'},
+    {ab:'WWA', name:'Western Washington'},
+  ]},
+  { div:'Southwestern', sects:[
+    {ab:'AZ',  name:'Arizona'},
+    {ab:'EB',  name:'East Bay'},
+    {ab:'LAX', name:'Los Angeles'},
+    {ab:'NV',  name:'Nevada'},
+    {ab:'ORG', name:'Orange'},
+    {ab:'PAC', name:'Pacific'},
+    {ab:'SB',  name:'Santa Barbara'},
+    {ab:'SCV', name:'Santa Clara Valley'},
+    {ab:'SDG', name:'San Diego'},
+    {ab:'SF',  name:'San Francisco'},
+    {ab:'SJV', name:'San Joaquin Valley'},
+    {ab:'SV',  name:'Sacramento Valley'},
+  ]},
+  { div:'West Gulf', sects:[
+    {ab:'NTX', name:'North Texas'},
+    {ab:'OK',  name:'Oklahoma'},
+    {ab:'STX', name:'South Texas'},
+    {ab:'WTX', name:'West Texas'},
+  ]},
+  { div:'Canada — RAC', sects:[
+    {ab:'AB',  name:'Alberta'},
+    {ab:'BC',  name:'British Columbia'},
+    {ab:'GH',  name:'Ontario Golden Horseshoe'},
+    {ab:'MB',  name:'Manitoba'},
+    {ab:'NB',  name:'New Brunswick'},
+    {ab:'NL',  name:'Newfoundland/Labrador'},
+    {ab:'NS',  name:'Nova Scotia'},
+    {ab:'ONE', name:'Ontario East'},
+    {ab:'ONN', name:'Ontario North'},
+    {ab:'ONS', name:'Ontario South'},
+    {ab:'PE',  name:'Prince Edward Island'},
+    {ab:'QC',  name:'Quebec'},
+    {ab:'SK',  name:'Saskatchewan'},
+    {ab:'TER', name:'Territories'},
+  ]},
+  { div:'DX', sects:[
+    {ab:'DX',  name:'DX — non US/Canada'},
+  ]},
+];
+
+// ── State ──────────────────────────────────────────────────────────────────
+var currentTab = 'stats';
+var lastStats = null;
+var prevQSOKeys = new Set();
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  ['stats','bands','conds','sects'].forEach(function(t) {
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('view-' + t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'bands') renderBandPlan((lastStats && lastStats.byBand) || []);
+  if (tab === 'sects') renderSections((lastStats && lastStats.sectionsWorked) || []);
+}
+
+// ── Always on top toggle ───────────────────────────────────────────────────
+async function togglePin() {
+  if (!window.electronAPI) return;
+  var on = await window.electronAPI.toggleAlwaysOnTop();
+  var btn = document.getElementById('pin-btn');
+  btn.classList.toggle('on', on);
+  btn.textContent = on ? 'Pinned' : 'Top';
+}
+
+// ── Stats polling ──────────────────────────────────────────────────────────
+async function fetchStats() {
+  try {
+    var res = await fetch(API_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var d = await res.json();
+    lastStats = d;
+
+    document.getElementById('s-total').textContent   = Number(d.total).toLocaleString();
+    document.getElementById('s-rate-hr').textContent = d.rateLastHour != null ? d.rateLastHour : '—';
+    document.getElementById('s-rate-10').textContent = d.rateLast10   != null ? d.rateLast10   : '—';
+    document.getElementById('s-score').textContent   = d.score != null ? Number(d.score).toLocaleString() : '—';
+    document.getElementById('s-secs').textContent    = (d.sectionsWorked || []).length;
+
+    renderBandBars(d.byBand || []);
+    renderRecent(d.recent || []);
+    renderSections(d.sectionsWorked || []);
+
+    if (currentTab === 'bands') renderBandPlan(d.byBand || []);
+
+    document.getElementById('hdr-dot').className = 'hdr-dot live';
+    var t = new Date(d.updated);
+    document.getElementById('hdr-updated').textContent =
+      t.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+  } catch (err) {
+    document.getElementById('hdr-dot').className = 'hdr-dot err';
+    document.getElementById('hdr-updated').textContent = 'Error';
+  }
+}
+
+// ── Band bars ──────────────────────────────────────────────────────────────
+function renderBandBars(byBand) {
+  var max = byBand.reduce(function(m, b) { return Math.max(m, b.count); }, 1);
+  document.getElementById('band-list').innerHTML = byBand.map(function(b) {
+    var pct = (b.count / max * 100).toFixed(1);
+    var color = BAND_COLORS[b.band] || '#555';
+    return '<div class="band-row">' +
+      '<div class="band-nm" style="color:' + color + '">' + b.band + '</div>' +
+      '<div class="band-track"><div class="band-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+      '<div class="band-ct">' + b.count + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+// ── Recent QSOs ─────────────────────────────────────────────────────────────
+function fmtTime(ts) {
+  if (!ts) return '';
+  var t = String(ts).split(' ')[1] || '';
+  return t.substring(0, 5);
+}
+
+function renderRecent(recent) {
+  var keys = new Set(recent.map(function(r) { return r.call + '|' + r.ts; }));
+  var newKeys = new Set();
+  keys.forEach(function(k) { if (!prevQSOKeys.has(k)) newKeys.add(k); });
+  prevQSOKeys = keys;
+
+  document.getElementById('qso-list').innerHTML = recent.slice(0, 12).map(function(r) {
+    var color = BAND_COLORS[r.band] || '#555';
+    var isNew = newKeys.has(r.call + '|' + r.ts);
+    return '<div class="qso-row' + (isNew ? ' new-q' : '') + '">' +
+      '<div class="qso-time">' + fmtTime(r.ts) + '</div>' +
+      '<div class="qso-call">' + (r.call || '') + '</div>' +
+      '<div class="qso-band" style="background:' + color + ';color:#000">' + (r.band || '') + '</div>' +
+      '<div class="qso-sec' + (r.section ? '' : ' dim') + '">' + (r.section || '—') + '</div>' +
+      '<div class="qso-op">' + (r.operator || '') + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+// ── Band Plan ──────────────────────────────────────────────────────────────
+function renderBandPlan(byBand) {
+  var countMap = {};
+  byBand.forEach(function(b) { countMap[b.band] = b.count; });
+
+  var html = BAND_PLAN.map(function(bp) {
+    var count = countMap[bp.band] || 0;
+    var color = BAND_COLORS[bp.band] || '#888';
+
+    var segs = [];
+    if (bp.cw)  segs.push({ mode:'CW',  color:'#3b82f6', freq: bp.cw });
+    if (bp.ssb) segs.push({ mode:'SSB', color:'#facc15', freq: bp.ssb });
+    if (bp.dig) segs.push({ mode:'DIG', color:'#22c55e', freq: bp.dig });
+
+    var segHtml = segs.map(function(s) {
+      return '<div class="bp-seg">' +
+        '<div class="bp-seg-dot" style="background:' + s.color + '"></div>' +
+        '<div class="bp-seg-mode" style="color:' + s.color + '">' + s.mode + '</div>' +
+        '<div class="bp-seg-freq">' + s.freq + ' MHz</div>' +
+        '</div>';
+    }).join('');
+
+    return '<div class="bp-band">' +
+      '<div class="bp-band-hdr">' +
+        '<div class="bp-band-name" style="color:' + color + '">' + bp.band + '</div>' +
+        '<div class="bp-band-mhz">' + bp.mhz + '</div>' +
+        '<div class="bp-count' + (count > 0 ? ' has' : '') + '">' + count + '</div>' +
+      '</div>' +
+      '<div class="bp-segs">' + segHtml + '</div>' +
+      '</div>';
+  }).join('');
+
+  document.getElementById('bp-list').innerHTML = html;
+}
+
+// ── Sections ───────────────────────────────────────────────────────────────
+function renderSections(worked) {
+  var workedSet = new Set(worked);
+  var total = SECTIONS_DATA.reduce(function(n, d) { return n + d.sects.length; }, 0);
+
+  document.getElementById('sects-summary').innerHTML =
+    '<strong>' + workedSet.size + '</strong> / ' + total + ' Sections Worked';
+
+  var html = SECTIONS_DATA.map(function(div) {
+    var rows = div.sects.map(function(s) {
+      var w = workedSet.has(s.ab);
+      return '<div class="sect-row' + (w ? ' worked' : '') + '">' +
+        '<span class="sect-ab">' + s.ab + '</span>' +
+        '<span class="sect-name">' + s.name + '</span>' +
+        '</div>';
+    }).join('');
+    return '<div class="div-group">' +
+      '<div class="div-title">' + div.div + '</div>' +
+      rows +
+      '</div>';
+  }).join('');
+
+  document.getElementById('sects-container').innerHTML = html;
+}
+
+// ── Conditions ─────────────────────────────────────────────────────────────
+function condBadge(val) {
+  if (!val || val === '—') return '<span class="badge none">N/A</span>';
+  var v = val.toLowerCase();
+  var cls = 'none';
+  if (v.indexOf('good')  >= 0)   cls = 'good';
+  else if (v.indexOf('fair')  >= 0) cls = 'fair';
+  else if (v.indexOf('poor')  >= 0) cls = 'poor';
+  else if (v.indexOf('storm') >= 0) cls = 'storm';
+  else if (v.indexOf('closed') >= 0) cls = 'none';
+  return '<span class="badge ' + cls + '">' + val + '</span>';
+}
+
+async function loadConditions() {
+  var btn = document.getElementById('conds-refresh-btn');
+  if (btn) btn.disabled = true;
+
+  document.getElementById('cond-table').innerHTML = '<div class="empty">Loading…</div>';
+  document.getElementById('vhf-table').innerHTML  = '<div class="empty">Loading…</div>';
+
+  if (!window.electronAPI) {
+    document.getElementById('cond-table').innerHTML = '<div class="empty">Not available outside Electron</div>';
+    if (btn) btn.disabled = false;
+    return;
+  }
+
+  var result = await window.electronAPI.fetchConditions();
+  if (!result.ok) {
+    document.getElementById('cond-table').innerHTML =
+      '<div class="empty">Error: ' + result.error + '</div>';
+    document.getElementById('vhf-table').innerHTML = '';
+    if (btn) btn.disabled = false;
+    return;
+  }
+
+  parseConditions(result.xml);
+  if (btn) btn.disabled = false;
+}
+
+function refreshConditions() { loadConditions(); }
+
+function parseConditions(xml) {
+  var parser = new DOMParser();
+  var doc = parser.parseFromString(xml, 'text/xml');
+
+  function txt(tag) {
+    var el = doc.querySelector(tag);
+    return el ? el.textContent.trim() : '—';
+  }
+
+  document.getElementById('idx-sfi').textContent  = txt('solarflux');
+  document.getElementById('idx-sn').textContent   = txt('sunspots');
+  document.getElementById('idx-k').textContent    = txt('kindex');
+  document.getElementById('idx-a').textContent    = txt('aindex');
+  document.getElementById('idx-xray').textContent = txt('xray');
+
+  // Color K-index by geomagnetic activity
+  var k = parseInt(txt('kindex'), 10);
+  var kEl = document.getElementById('idx-k');
+  if (k <= 2)      kEl.style.color = '#22c55e';
+  else if (k <= 4) kEl.style.color = '#facc15';
+  else             kEl.style.color = '#ef4444';
+
+  // HF band conditions
+  var bands = doc.querySelectorAll('calculatedconditions band');
+  var condMap = {};
+  bands.forEach(function(b) {
+    var name = b.getAttribute('name');
+    var time = b.getAttribute('time');
+    if (!condMap[name]) condMap[name] = {};
+    condMap[name][time] = b.textContent.trim();
+  });
+
+  var hfOrder = ['80m-40m','30m-20m','17m-15m','12m-10m'];
+  var hfHtml = hfOrder.map(function(name) {
+    var day   = (condMap[name] && condMap[name].day)   || '—';
+    var night = (condMap[name] && condMap[name].night) || '—';
+    return '<div class="cond-row">' +
+      '<div class="cond-name">' + name + '</div>' +
+      condBadge(day) + condBadge(night) +
+      '</div>';
+  }).join('');
+  document.getElementById('cond-table').innerHTML = hfHtml || '<div class="empty">No data</div>';
+
+  // VHF conditions
+  var vhf = doc.querySelectorAll('calculatedvhfconditions phenomenon');
+  if (vhf.length > 0) {
+    var vhfHtml = Array.from(vhf).map(function(p) {
+      var name = (p.getAttribute('name') || '').replace(/-/g, ' ');
+      var loc  = (p.getAttribute('location') || '').replace(/_/g, ' ');
+      var val  = p.textContent.trim();
+      return '<div class="vhf-row">' +
+        '<div class="vhf-name">' + name + '<br><span style="font-size:0.6rem;color:#555">' + loc + '</span></div>' +
+        condBadge(val) +
+        '</div>';
+    }).join('');
+    document.getElementById('vhf-table').innerHTML = vhfHtml;
+  } else {
+    document.getElementById('vhf-table').innerHTML = '<div class="empty">No VHF data</div>';
+  }
+
+  document.getElementById('conds-updated').textContent = 'Solar data: ' + txt('updated');
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderBandPlan([]);
+fetchStats();
+setInterval(fetchStats, 60000);
+</script>
+</body>
+</html>

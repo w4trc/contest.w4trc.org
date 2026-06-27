@@ -1,0 +1,39 @@
+{
+  "name": "w4trc-fieldday-app",
+  "version": "1.0.0",
+  "description": "W4TRC Field Day Desktop Dashboard",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win zip --x64",
+    "build:mac": "electron-builder --mac dmg"
+  },
+  "build": {
+    "appId": "org.w4trc.fieldday",
+    "productName": "W4TRC Field Day",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**"
+    ],
+    "win": {
+      "target": [{ "target": "zip", "arch": ["x64"] }],
+      "icon": "renderer/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "renderer/icon.icns"
+    }
+  },
+  "author": "W4TRC",
+  "dependencies": {},
+  "allowScripts": {
+    "electron@33.4.11": true,
+    "electron-winstaller@5.4.0": true
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^26.15.3",
+    "playwright-core": "^1.61.1"
+  }
+}

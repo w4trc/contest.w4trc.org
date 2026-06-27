@@ -10,7 +10,12 @@
       "Bash(git -C \"D:/Users/joshu/Documents/Code/contest.w4trc.org\" log --oneline)",
       "Bash(git -C \"D:/Users/joshu/Documents/Code/contest.w4trc.org-1\" log --oneline)",
       "Bash(git -C \"D:/Users/joshu/Documents/Code/contest.w4trc.org\" remote -v)",
-      "Read(//d/Users/joshu/Documents/Code/**)"
+      "Read(//d/Users/joshu/Documents/Code/**)",
+      "Bash(npm install *)",
+      "Bash(npm approve-scripts *)",
+      "Bash(npm start *)",
+      "Skill(run)",
+      "Bash(pkill -f \"electron.*contest.w4trc\")"
     ]
   }
 }
