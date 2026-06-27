@@ -16,3 +16,8 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+
+# Electron app build output and dev tools
+electron-app/dist/
+electron-app/*.zip
+electron-app/drive.mjs
