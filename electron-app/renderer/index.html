@@ -526,9 +526,9 @@ var BAND_PLAN = [
     ssb:'420.000 – 450.000' },
 ];
 
-// ── ARRL Sections by Division ──────────────────────────────────────────────
+// ── ARRL Sections by Call Area ─────────────────────────────────────────────
 var SECTIONS_DATA = [
-  { div:'New England', sects:[
+  { div:'Call Area 1', sects:[
     {ab:'CT',  name:'Connecticut'},
     {ab:'EMA', name:'Eastern Massachusetts'},
     {ab:'ME',  name:'Maine'},
@@ -537,79 +537,47 @@ var SECTIONS_DATA = [
     {ab:'VT',  name:'Vermont'},
     {ab:'WMA', name:'Western Massachusetts'},
   ]},
-  { div:'Hudson', sects:[
+  { div:'Call Area 2', sects:[
     {ab:'ENY', name:'Eastern New York'},
-    {ab:'NLI', name:'New York City-Long Island'},
+    {ab:'NLI', name:'NYC / Long Island'},
+    {ab:'NNJ', name:'Northern New Jersey'},
     {ab:'NNY', name:'Northern New York'},
+    {ab:'SNJ', name:'Southern New Jersey'},
     {ab:'WNY', name:'Western New York'},
   ]},
-  { div:'Atlantic', sects:[
+  { div:'Call Area 3', sects:[
     {ab:'DE',  name:'Delaware'},
     {ab:'EPA', name:'Eastern Pennsylvania'},
-    {ab:'MDC', name:'Maryland-DC'},
-    {ab:'NNJ', name:'Northern New Jersey'},
-    {ab:'SNJ', name:'Southern New Jersey'},
+    {ab:'MDC', name:'Maryland/DC'},
     {ab:'WPA', name:'Western Pennsylvania'},
-    {ab:'WV',  name:'West Virginia'},
   ]},
-  { div:'Southeastern', sects:[
+  { div:'Call Area 4', sects:[
     {ab:'AL',  name:'Alabama'},
     {ab:'GA',  name:'Georgia'},
+    {ab:'KY',  name:'Kentucky'},
     {ab:'NC',  name:'North Carolina'},
     {ab:'NFL', name:'Northern Florida'},
     {ab:'PR',  name:'Puerto Rico'},
     {ab:'SC',  name:'South Carolina'},
     {ab:'SFL', name:'Southern Florida'},
+    {ab:'TN',  name:'Tennessee'},
     {ab:'VA',  name:'Virginia'},
     {ab:'VI',  name:'US Virgin Islands'},
     {ab:'WCF', name:'West Central Florida'},
   ]},
-  { div:'Delta', sects:[
+  { div:'Call Area 5', sects:[
     {ab:'AR',  name:'Arkansas'},
     {ab:'LA',  name:'Louisiana'},
     {ab:'MS',  name:'Mississippi'},
-    {ab:'TN',  name:'Tennessee'},
-  ]},
-  { div:'Great Lakes', sects:[
-    {ab:'KY',  name:'Kentucky'},
-    {ab:'MI',  name:'Michigan'},
-    {ab:'OH',  name:'Ohio'},
-  ]},
-  { div:'Central', sects:[
-    {ab:'IL',  name:'Illinois'},
-    {ab:'IN',  name:'Indiana'},
-    {ab:'WI',  name:'Wisconsin'},
-  ]},
-  { div:'Midwest', sects:[
-    {ab:'IA',  name:'Iowa'},
-    {ab:'KS',  name:'Kansas'},
-    {ab:'MO',  name:'Missouri'},
-    {ab:'NE',  name:'Nebraska'},
-  ]},
-  { div:'Dakota', sects:[
-    {ab:'MN',  name:'Minnesota'},
-    {ab:'ND',  name:'North Dakota'},
-    {ab:'SD',  name:'South Dakota'},
-  ]},
-  { div:'Rocky Mountain', sects:[
-    {ab:'CO',  name:'Colorado'},
     {ab:'NM',  name:'New Mexico'},
-    {ab:'UT',  name:'Utah'},
-    {ab:'WY',  name:'Wyoming'},
+    {ab:'NTX', name:'North Texas'},
+    {ab:'OK',  name:'Oklahoma'},
+    {ab:'STX', name:'South Texas'},
+    {ab:'WTX', name:'West Texas'},
   ]},
-  { div:'Northwestern', sects:[
-    {ab:'AK',  name:'Alaska'},
-    {ab:'EWA', name:'Eastern Washington'},
-    {ab:'ID',  name:'Idaho'},
-    {ab:'MT',  name:'Montana'},
-    {ab:'OR',  name:'Oregon'},
-    {ab:'WWA', name:'Western Washington'},
-  ]},
-  { div:'Southwestern', sects:[
-    {ab:'AZ',  name:'Arizona'},
+  { div:'Call Area 6', sects:[
     {ab:'EB',  name:'East Bay'},
     {ab:'LAX', name:'Los Angeles'},
-    {ab:'NV',  name:'Nevada'},
     {ab:'ORG', name:'Orange'},
     {ab:'PAC', name:'Pacific'},
     {ab:'SB',  name:'Santa Barbara'},
@@ -619,16 +587,42 @@ var SECTIONS_DATA = [
     {ab:'SJV', name:'San Joaquin Valley'},
     {ab:'SV',  name:'Sacramento Valley'},
   ]},
-  { div:'West Gulf', sects:[
-    {ab:'NTX', name:'North Texas'},
-    {ab:'OK',  name:'Oklahoma'},
-    {ab:'STX', name:'South Texas'},
-    {ab:'WTX', name:'West Texas'},
+  { div:'Call Area 7', sects:[
+    {ab:'AK',  name:'Alaska'},
+    {ab:'AZ',  name:'Arizona'},
+    {ab:'EWA', name:'Eastern Washington'},
+    {ab:'ID',  name:'Idaho'},
+    {ab:'MT',  name:'Montana'},
+    {ab:'NV',  name:'Nevada'},
+    {ab:'OR',  name:'Oregon'},
+    {ab:'UT',  name:'Utah'},
+    {ab:'WWA', name:'Western Washington'},
+    {ab:'WY',  name:'Wyoming'},
   ]},
-  { div:'Canada — RAC', sects:[
+  { div:'Call Area 8', sects:[
+    {ab:'MI',  name:'Michigan'},
+    {ab:'OH',  name:'Ohio'},
+    {ab:'WV',  name:'West Virginia'},
+  ]},
+  { div:'Call Area 9', sects:[
+    {ab:'IL',  name:'Illinois'},
+    {ab:'IN',  name:'Indiana'},
+    {ab:'WI',  name:'Wisconsin'},
+  ]},
+  { div:'Call Area Ø', sects:[
+    {ab:'CO',  name:'Colorado'},
+    {ab:'IA',  name:'Iowa'},
+    {ab:'KS',  name:'Kansas'},
+    {ab:'MN',  name:'Minnesota'},
+    {ab:'MO',  name:'Missouri'},
+    {ab:'ND',  name:'North Dakota'},
+    {ab:'NE',  name:'Nebraska'},
+    {ab:'SD',  name:'South Dakota'},
+  ]},
+  { div:'Canada', sects:[
     {ab:'AB',  name:'Alberta'},
     {ab:'BC',  name:'British Columbia'},
-    {ab:'GH',  name:'Ontario Golden Horseshoe'},
+    {ab:'GH',  name:'Golden Horseshoe'},
     {ab:'MB',  name:'Manitoba'},
     {ab:'NB',  name:'New Brunswick'},
     {ab:'NL',  name:'Newfoundland/Labrador'},

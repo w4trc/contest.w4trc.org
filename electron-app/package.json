@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build:win": "electron-builder --win zip --x64",
+    "build:win": "electron-builder --win portable --x64",
     "build:mac": "electron-builder --mac dmg"
   },
   "build": {
@@ -17,7 +17,7 @@
       "renderer/**"
     ],
     "win": {
-      "target": [{ "target": "zip", "arch": ["x64"] }],
+      "target": [{ "target": "portable", "arch": ["x64"] }],
       "icon": "renderer/icon.ico"
     },
     "mac": {
