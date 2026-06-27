@@ -1,106 +1,106 @@
-U.S. Call Area 0
-Colorado  	CO
-Iowa  	IA
-Kansas  	KS
-Minnesota  	MN
-Missouri  	MO
-North Dakota  	ND
-Nebraska  	NE
-South Dakota  	SD
- 
-U.S. Call Area 1
-Connecticut  	CT
-Eastern Massachusetts  	EMA
-Maine  	ME
-New Hampshire  	NH
-Rhode Island  	RI
-Vermont  	VT
-Western Massachusetts  	WMA
- 
-U.S. Call Area 2
-Eastern New York  	ENY
-New York City-Long Island  	NLI
-Northern New Jersey  	NNJ
-Northern New York  	NNY
-Southern New Jersey  	SNJ
-Western New York  	WNY
- 
-U.S. Call Area 3
-Delaware  	DE
-Eastern Pennsylvania  	EPA
-Maryland-DC  	MDC
-Western Pennsylvania  	WPA
- 
-U.S. Call Area 4
-Alabama  	AL
-Georgia  	GA
-Kentucky  	KY
-North Carolina  	NC
-Northern Florida  	NFL
-Puerto Rico  	PR
-South Carolina  	SC
-Southern Florida  	SFL
-Tennessee  	TN
-Virginia  	VA
-US Virgin Islands  	VI
-West Central Florida  	WCF
- 
-U.S. Call Area 5
-Arkansas  	AR
-Louisiana  	LA
-Mississippi  	MS
-New Mexico  	NM
-North Texas  	NTX
-Oklahoma  	OK
-South Texas  	STX
-West Texas  	WTX
- 
-U.S. Call Area 6
-East Bay  	EB
-Los Angeles  	LAX
-Orange  	ORG
-Pacific  	PAC
-Santa Barbara  	SB
-Santa Clara Valley  	SCV
-San Diego  	SDG
-San Francisco  	SF
-San Joaquin Valley  	SJV
-Sacramento Valley  	SV
- 
-U.S. Call Area 7
-Alaska  	AK
-Arizona  	AZ
-Eastern Washington  	EWA
-Idaho  	ID
-Montana  	MT
-Nevada  	NV
-Oregon  	OR
-Utah  	UT
-Western Washington  	WWA
-Wyoming  	WY
- 
-U.S. Call Area 8
-Michigan  	MI
-Ohio  	OH
-West Virginia  	WV
- 
-U.S. Call Area 9
-Illinois  	IL
-Indiana  	IN
-Wisconsin  	WI
- 
+Call Area 1
+Connecticut CT 
+Rhode Island RI
+Eastern Massachusetts EMA 
+Vermont VT
+Maine ME 
+Western Massachusetts WMA
+New Hampshire NH
+
+Call Area 2
+Eastern New York ENY 
+Northern New York NNY
+NYC / Long Island NLI 
+Southern New Jersey SNJ
+Northern New Jersey NNJ 
+Western New York WNY
+
+Call Area 3
+Delaware DE 
+Maryland/DC MDC
+Eastern Pennsylvania EPA 
+Western Pennsylvania WPA
+
+Call Area 4
+Alabama AL 
+Southern Florida SFL
+Georgia GA 
+Tennessee TN
+Kentucky KY 
+Virginia VA
+North Carolina NC 
+West Central Florida WCF
+Northern Florida NFL 
+Puerto Rico PR
+South Carolina SC 
+US Virgin Islands VI
+
+Call Area 5
+Arkansas AR 
+North Texas NTX
+Louisiana LA 
+Oklahoma OK
+Mississippi MS 
+South Texas STX
+New Mexico NM 
+West Texas WTX
+
+Call Area 6
+East Bay EB 
+San Diego SDG
+Los Angeles LAX 
+San Francisco SF
+Orange ORG 
+San Joaquin Valley SJV
+Santa Barbara SB 
+Sacramento Valley SV
+Santa Clara Valley SCV 
+Pacific PAC
+
+Call Area 7
+Alaska AK 
+Nevada NV
+Arizona AZ 
+Oregon OR
+Eastern Washington EWA 
+Utah UT
+Idaho ID 
+Western Washington WWA
+Montana MT 
+Wyoming WY
+
+Call Area 8
+Michigan MI 
+West Virginia WV
+Ohio OH
+
+Call Area 9
+Illinois IL 
+Wisconsin WI
+Indiana IN
+
+Call Area Ø
+Colorado CO 
+Missouri MO
+Iowa IA 
+Nebraska NE
+Kansas KS 
+North Dakota ND
+Minnesota MN 
+South Dakota SD
+
 Canada
-Alberta  	AB
-British Columbia  	BC
-Ontario Golden Horseshoe  	GH
-Manitoba  	MB
-New Brunswick  	NB
-Newfoundland and Labrador  	NL
-Nova Scotia  	NS
-Ontario East  	ONE
-Ontario North  	ONN
-Ontario South  	ONS
-Prince Edward Island  	PE
-Quebec  	QC
-Saskatchewan  	SK
-Territories  	TER
+Alberta AB 
+Ontario East ONE
+British Columbia BC 
+Ontario North ONN
+Golden Horseshoe GH 
+Ontario South ONS
+Manitoba MB 
+Prince Edward Island PE
+New Brunswick NB 
+Quebec QC
+Newfoundland/Labrador NL 
+Saskatchewan SK
+Nova Scotia NS 
+Territories TER
