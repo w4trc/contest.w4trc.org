@@ -11,10 +11,14 @@ N1MM+ logger  ──UDP 12060──▶  agent (Node.js)  ──HTTPS──▶  C
                              (disk-backed)                      │
                                                          public dashboard
                                                          /api/stats JSON
+                                                               │
+                                                    Electron desktop app
+                                                    (polls /api/stats)
 ```
 
 **`agent/`** — Node.js process that runs on the Field Day PC alongside N1MM+.  
-**`worker/`** — Cloudflare Worker: ingest endpoint + stats API + single-page dashboard.
+**`worker/`** — Cloudflare Worker: ingest endpoint + stats API + single-page dashboard.  
+**`electron-app/`** — Native desktop app for the operating position: shows live score, band/mode breakdown, and propagation conditions in a compact always-on-top window.
 
 ## Dashboard features
 
@@ -27,6 +31,47 @@ N1MM+ logger  ──UDP 12060──▶  agent (Node.js)  ──HTTPS──▶  C
 - Leaflet choropleth map of ARRL/RAC sections worked
 - Sections grid with flash animation on new sections
 - Auto-refreshes every 10 seconds
+
+## Electron desktop app
+
+A compact native window (420 × 780 px) designed to sit alongside N1MM+ at the operating position. It polls the Worker's `/api/stats` endpoint every 10 seconds and displays:
+
+- Live QSO count, score, and rate (last hour / last 10 min)
+- By-band and by-mode breakdown
+- Recent QSOs table
+- HF propagation conditions (solar flux, A/K indices, band conditions) via hamqsl.com
+
+The window supports "always on top" mode so it stays visible over other apps during the contest.
+
+### Running in development
+
+```bash
+cd electron-app
+npm install
+npm start
+```
+
+### Building distributables
+
+Windows portable EXE:
+
+```bash
+npm run build:win
+```
+
+macOS DMG:
+
+```bash
+npm run build:mac
+```
+
+Built artifacts land in `electron-app/dist/`.
+
+### Configuration
+
+The app points at the live Worker URL hardcoded in `renderer/index.html`. Update the `STATS_URL` constant at the top of that file if you deploy your own Worker under a different hostname.
+
+---
 
 ## Setup
 
@@ -125,6 +170,13 @@ contest.w4trc.org/
 │   ├── schema.sql
 │   ├── sections.json      # 86 ARRL/RAC sections (authoritative)
 │   └── wrangler.toml
+├── electron-app/
+│   ├── main.js            # Electron main process (window, IPC handlers)
+│   ├── preload.js         # Context bridge (exposes safe APIs to renderer)
+│   ├── renderer/
+│   │   └── index.html     # UI: stats display, propagation panel
+│   ├── dist/              # Built artifacts — gitignored
+│   └── package.json
 └── .gitignore
 ```
 
